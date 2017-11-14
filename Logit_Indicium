@@ -1,0 +1,64 @@
+# Import all the stuff I need
+import numpy as np
+import pandas as pd
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
+import os
+from patsy import dmatrices
+from sklearn.linear_model import LogisticRegression
+from sklearn import metrics
+from sklearn.cross_validation import cross_val_score
+from xlwt import Workbook
+from sklearn.model_selection import train_test_split
+
+#Load csv
+df = pd.read_csv("Abandono_clientes.csv")
+
+#Print DataFrame
+print(df)
+
+#Criar dummy para as variáveis "Balance", "Gender" e "Geography
+Positive_Balance = pd.get_dummies(df.Balance.gt(0)).rename(columns=dict(enumerate(["Saldo_zero", "Positive_Balance"]))).iloc[:, 1:]
+df = pd.concat([df, Positive_Balance], axis=1)
+
+Dummy_Genero = pd.get_dummies(df.Gender, prefix="Gender", drop_first=True)
+df = pd.concat([df, Dummy_Genero], axis=1)
+df = df.drop(["Gender"], axis=1)
+
+Dummy_country = pd.get_dummies(df.Geography, prefix="Country")
+df = pd.concat([df, Dummy_country], axis=1)
+df = df.drop(["Geography"], axis=1)
+
+#Retirar colunas não relevantes ao modelo
+df = df.drop(['RowNumber', 'CustomerId', 'Surname'], axis=1)
+
+#Transformar o salário estimado em ln
+df['EstimatedSalary'] = np.log(df['EstimatedSalary'])
+df = df.rename(columns = {'EstimatedSalary': 'LnEstimatedSalary'})
+
+#Atribuir variáveis explicativas
+ind_vars = ['CreditScore', 'Age', 'Tenure', 'NumOfProducts', 'HasCrCard', 
+        'IsActiveMember', 'LnEstimatedSalary', 'Balance', 'Positive_Balance', 'Gender_Male','Country_France', 'Country_Germany', 'Country_Spain']
+
+#Rodar e ajustar o modelo
+logit = sm.Logit(df['Exited'], df[ind_vars])
+result = logit.fit()
+
+#Printar e analisar os coeficientes
+result.summary()
+
+#Analisar o intervalo de confiança dos coeficientes
+result.conf_int()
+
+#Load CSV_teste
+df2 = pd.read_csv("Abandono_teste.csv")
+
+#Aplicar as mesmas condições aplicadas ao dataframe anterior(dummies, retirar colunas irrelevantes, transformar salário em ln)
+
+#Prever os valores de 'Exited'
+df2['Exited'] = result.predict(df[ind_vars])
+
+#Converter em uma planilha segundo as especificações
+df_final = df2['Exited']
+df_final = pd.concat([df_original['RowNumber'], df_final], axis=1)
+df_final.to_csv('Planilha_Final.csv',columns=('RowNumber','Exited'))

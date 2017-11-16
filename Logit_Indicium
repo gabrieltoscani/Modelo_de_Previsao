@@ -59,6 +59,9 @@ df2 = pd.read_csv("Abandono_teste.csv")
 #Prever os valores de 'Exited'
 df2['Exited'] = result.predict(df[ind_vars])
 
+#Load original CSV
+df_original = pd.read_csv("Abandono_clientes.csv")
+
 #Converter em uma planilha segundo as especificações
 df_final = df2['Exited']
 df_final = pd.concat([df_original['RowNumber'], df_final], axis=1)

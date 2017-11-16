@@ -47,8 +47,9 @@ result = logit.fit()
 #Printar e analisar os coeficientes
 result.summary()
 
-#Analisar o intervalo de confiança dos coeficientes
-result.conf_int()
+#Printar e analisar os resultados marginais
+marginal_effects = result.get_margeff(at='mean', dummy=True)
+marginal_effects.summary()
 
 #Load CSV_teste
 df2 = pd.read_csv("Abandono_teste.csv")
